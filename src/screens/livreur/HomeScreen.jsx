@@ -8,58 +8,89 @@ import {
   StatusBar,
   Switch,
 } from 'react-native';
-
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { Colors, Spacing, Radius, FontSize } from '../../config/theme';
 import { MOCK_COMMANDES_LIVREUR, MOCK_STATS_LIVREUR } from '../../config/mockData';
+import DrawerMenu from '../../components/DrawerMenu';
+
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+const CORAL        = '#FF6B5B';
+const DARK_CARD    = '#1C1C1E';
+const WHITE        = '#FFFFFF';
+const LIGHT_BG     = '#F5F5F7';
+const DARK_TEXT    = '#1C1C1E';
+const GRAY_LABEL   = '#8E8EA0';
+const GRAY_DIV     = '#ECECF0';
+const SUCCESS      = '#22C55E';
+const SUCCESS_BG   = 'rgba(34,197,94,0.10)';
+const SUCCESS_BORDER = 'rgba(34,197,94,0.30)';
+const ERROR        = '#EF4444';
+const ERROR_BG     = 'rgba(239,68,68,0.10)';
+const WARNING      = '#F59E0B';
+
+const CARD_SHADOW = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.07,
+  shadowRadius: 14,
+  elevation: 5,
+};
 
 const VEHICLE_ICONS = {
-  moto: '🛵',
-  voiture: '🚗',
+  moto:        '🛵',
+  voiture:     '🚗',
   camionnette: '🚐',
 };
 
+// ─── Screen ───────────────────────────────────────────────────────────────────
 export default function LivreurHomeScreen({ navigation }) {
-  const [isOnline, setIsOnline] = useState(true);
-  const [acceptedId, setAcceptedId] = useState(null);
-
-  const handleAccept = (id) => setAcceptedId(id);
-  const handleLogout = () => navigation.replace('Login');
+  const [isOnline,   setIsOnline]   = useState(true);
+  const [appliedIds, setAppliedIds] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+    <View style={s.root}>
+      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Top Bar ── */}
-        <View style={styles.topBar}>
-          <View>
-            <Text style={styles.greeting}>Bonjour 👋</Text>
-            <Text style={styles.livreurName}>Youssef Benali</Text>
-          </View>
-          <View style={styles.topBarRight}>
-            <TouchableOpacity style={styles.notifBtn}>
-              <Text style={styles.notifIcon}>🔔</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.avatarBtn} onPress={handleLogout}>
-              <Text style={styles.avatarText}>YB</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        {/* ── Header ── */}
+        <SafeAreaView edges={['top']} style={s.header}>
+          {/* Hamburger */}
+          <TouchableOpacity style={s.hamburgerBtn} onPress={() => setDrawerOpen(true)} activeOpacity={0.7}>
+            <Text style={s.hamburgerIcon}>☰</Text>
+          </TouchableOpacity>
 
-        {/* ── Toggle Disponibilité ── */}
-        <View style={[styles.statusToggle, isOnline && styles.statusToggleOnline]}>
-          <View style={styles.statusLeft}>
-            <View style={[styles.statusDot, { backgroundColor: isOnline ? Colors.success : Colors.textMuted }]} />
+          <View style={s.headerCenter}>
+            <Text style={s.greeting}>Bonjour 👋</Text>
+            <Text style={s.driverName}>Youssef Benali</Text>
+          </View>
+
+          <View style={s.headerRight}>
+            <TouchableOpacity style={s.notifBtn}>
+              <Text style={s.notifIcon}>🔔</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.avatarBtn}
+              onPress={() => navigation.navigate('DriverProfile')}
+              activeOpacity={0.8}
+            >
+              <Text style={s.avatarText}>YB</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+
+        {/* ── Status Toggle ── */}
+        <View style={[s.statusCard, isOnline && s.statusCardOnline]}>
+          <View style={s.statusLeft}>
+            <View style={[s.statusDot, { backgroundColor: isOnline ? SUCCESS : GRAY_LABEL }]} />
             <View>
-              <Text style={styles.statusTitle}>
-                {isOnline ? '🟢 Disponible' : '⚫ Hors ligne'}
+              <Text style={s.statusTitle}>
+                {isOnline ? 'Disponible' : 'Hors ligne'}
               </Text>
-              <Text style={styles.statusSubtitle}>
+              <Text style={s.statusSubtitle}>
                 {isOnline
                   ? 'Vous recevez des commandes'
                   : 'Activez pour recevoir des commandes'}
@@ -69,351 +100,334 @@ export default function LivreurHomeScreen({ navigation }) {
           <Switch
             value={isOnline}
             onValueChange={setIsOnline}
-            trackColor={{ false: Colors.bgElevated, true: Colors.successGhost }}
-            thumbColor={isOnline ? Colors.success : Colors.textMuted}
+            trackColor={{ false: GRAY_DIV, true: SUCCESS_BG }}
+            thumbColor={isOnline ? SUCCESS : GRAY_LABEL}
+            ios_backgroundColor={GRAY_DIV}
           />
         </View>
 
-        {/* ── Stats du jour ── */}
-        <View style={styles.statsRow}>
-          <MiniStat icon="📦" label="Aujourd'hui" value={`${MOCK_STATS_LIVREUR.commandesAujourdhui}`} color={Colors.primary} />
-          <MiniStat icon="💰" label="Gains / jour" value={`${MOCK_STATS_LIVREUR.gainsAujourdhui} MAD`} color={Colors.success} />
-          <MiniStat icon="⭐" label="Note" value={`${MOCK_STATS_LIVREUR.note}/5`} color={Colors.warning} />
+        {/* ── Stats Row ── */}
+        <View style={s.statsRow}>
+          <MiniStat icon="📦" label="Aujourd'hui"  value={`${MOCK_STATS_LIVREUR.commandesAujourdhui}`}  color={CORAL}   />
+          <MiniStat icon="💰" label="Gains / jour"  value={`${MOCK_STATS_LIVREUR.gainsAujourdhui} MAD`} color={SUCCESS} />
+          <MiniStat icon="⭐" label="Note"          value={`${MOCK_STATS_LIVREUR.note}/5`}              color={WARNING} />
         </View>
 
-        {/* ── Gains semaine ── */}
-        <View style={styles.earningsCard}>
+        {/* ── Earnings Card ── */}
+        <View style={s.earningsCard}>
           <View>
-            <Text style={styles.earningsLabel}>Gains cette semaine</Text>
-            <Text style={styles.earningsValue}>{MOCK_STATS_LIVREUR.gainsSemaine} MAD</Text>
+            <Text style={s.earningsLabel}>Gains cette semaine</Text>
+            <Text style={s.earningsValue}>{MOCK_STATS_LIVREUR.gainsSemaine} MAD</Text>
           </View>
-          <View style={styles.earningsRight}>
-            <Text style={styles.totalLabel}>Total livraisons</Text>
-            <Text style={styles.totalValue}>{MOCK_STATS_LIVREUR.totalLivraisons} 🏆</Text>
+          <View style={s.earningsDivider} />
+          <View style={s.earningsRight}>
+            <Text style={s.earningsLabel}>Total livraisons</Text>
+            <Text style={s.totalValue}>{MOCK_STATS_LIVREUR.totalLivraisons} 🏆</Text>
           </View>
         </View>
 
-        {/* ── Commandes disponibles ── */}
+        {/* ── Orders Section ── */}
         {isOnline ? (
           <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Commandes disponibles</Text>
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>LIVE</Text>
+            <View style={s.sectionHeader}>
+              <Text style={s.sectionTitle}>Commandes disponibles</Text>
+              <View style={s.liveBadge}>
+                <View style={s.liveDot} />
+                <Text style={s.liveText}>LIVE</Text>
               </View>
             </View>
 
-            <View style={styles.commandesList}>
-              {MOCK_COMMANDES_LIVREUR.map((commande) => (
-                <CommandeDisponibleCard
+            <View style={s.ordersList}>
+              {MOCK_COMMANDES_LIVREUR.map(commande => (
+                <OrderCard
                   key={commande.id}
                   commande={commande}
-                  accepted={acceptedId === commande.id}
-                  onAccept={() => handleAccept(commande.id)}
+                  applied={appliedIds.includes(commande.id)}
+                  onApply={() => setAppliedIds(prev => [...prev, commande.id])}
                 />
               ))}
             </View>
           </>
         ) : (
-          <View style={styles.offlineBox}>
-            <Text style={styles.offlineEmoji}>😴</Text>
-            <Text style={styles.offlineTitle}>Vous êtes hors ligne</Text>
-            <Text style={styles.offlineSubtitle}>
+          <View style={s.offlineBox}>
+            <Text style={s.offlineEmoji}>😴</Text>
+            <Text style={s.offlineTitle}>Vous êtes hors ligne</Text>
+            <Text style={s.offlineSub}>
               Activez le switch ci-dessus pour commencer à recevoir des commandes.
             </Text>
           </View>
         )}
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
 
-// ── Composant MiniStat ──
-function MiniStat({ icon, label, value, color }) {
-  return (
-    <View style={miniStatStyles.card}>
-      <Text style={miniStatStyles.icon}>{icon}</Text>
-      <Text style={[miniStatStyles.value, { color }]}>{value}</Text>
-      <Text style={miniStatStyles.label}>{label}</Text>
+        <View style={{ height: 40 }} />
+      </ScrollView>
+
+      {/* ── Drawer ── */}
+      <DrawerMenu
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        navigation={navigation}
+        activeScreen="LivreurHome"
+        driverName="Youssef Benali"
+        driverEmail="youssef@delivtrack.ma"
+      />
     </View>
   );
 }
 
-// ── Composant CommandeDisponibleCard ──
-function CommandeDisponibleCard({ commande, accepted, onAccept }) {
+// ─── Mini Stat Card ───────────────────────────────────────────────────────────
+function MiniStat({ icon, label, value, color }) {
   return (
-    <View style={cardStyles.card}>
-      {/* Header */}
-      <View style={cardStyles.header}>
-        <View style={cardStyles.agenceRow}>
-          <Text style={cardStyles.vehicleIcon}>
-            {VEHICLE_ICONS[commande.vehiculeType] || '📦'}
-          </Text>
+    <View style={stat.card}>
+      <Text style={stat.icon}>{icon}</Text>
+      <Text style={[stat.value, { color }]}>{value}</Text>
+      <Text style={stat.label}>{label}</Text>
+    </View>
+  );
+}
+
+// ─── Order Card ───────────────────────────────────────────────────────────────
+function OrderCard({ commande, applied, onApply }) {
+  return (
+    <View style={card.wrap}>
+      {/* Header row */}
+      <View style={card.header}>
+        <View style={card.agenceRow}>
+          <View style={card.vehicleIconWrap}>
+            <Text style={card.vehicleIcon}>
+              {VEHICLE_ICONS[commande.vehiculeType] || '📦'}
+            </Text>
+          </View>
           <View>
-            <Text style={cardStyles.agenceName}>{commande.agence}</Text>
-            <Text style={cardStyles.commandeId}>#CMD-{commande.id.padStart(4, '0')}</Text>
+            <Text style={card.agenceName}>{commande.agence}</Text>
+            <Text style={card.orderId}>#CMD-{commande.id.padStart(4, '0')}</Text>
           </View>
         </View>
-        <View style={cardStyles.prixBox}>
-          <Text style={cardStyles.prix}>{commande.prix}</Text>
-          <Text style={cardStyles.prixUnit}>MAD</Text>
+        <View style={card.pricePill}>
+          <Text style={card.price}>{commande.prix}</Text>
+          <Text style={card.priceUnit}> MAD</Text>
         </View>
       </View>
 
-      {/* Adresses */}
-      <View style={cardStyles.addressSection}>
-        <View style={cardStyles.addressRow}>
-          <View style={[cardStyles.dot, { backgroundColor: Colors.primary }]} />
-          <Text style={cardStyles.addressText} numberOfLines={1}>
-            {commande.pickupAdresse}
-          </Text>
+      <View style={card.divider} />
+
+      {/* Addresses */}
+      <View style={card.addressSection}>
+        <View style={card.addressRow}>
+          <View style={[card.dot, { backgroundColor: CORAL }]} />
+          <Text style={card.addressText} numberOfLines={1}>{commande.pickupAdresse}</Text>
         </View>
-        <View style={cardStyles.addressLine} />
-        <View style={cardStyles.addressRow}>
-          <View style={[cardStyles.dot, { backgroundColor: Colors.success }]} />
-          <Text style={cardStyles.addressText} numberOfLines={1}>
-            {commande.depotAdresse}
-          </Text>
+        <View style={card.addressLine} />
+        <View style={card.addressRow}>
+          <View style={[card.dot, { backgroundColor: SUCCESS }]} />
+          <Text style={card.addressText} numberOfLines={1}>{commande.depotAdresse}</Text>
         </View>
       </View>
 
-      {/* Infos + Description */}
-      <View style={cardStyles.infoRow}>
-        <View style={cardStyles.infoBadge}>
-          <Text style={cardStyles.infoText}>📍 {commande.distance} km</Text>
+      {/* Meta badges */}
+      <View style={card.metaRow}>
+        <View style={card.metaBadge}>
+          <Text style={card.metaText}>📍 {commande.distance} km</Text>
         </View>
-        <View style={cardStyles.infoBadge}>
-          <Text style={cardStyles.infoText}>⏱ {commande.tempsEstime}</Text>
+        <View style={card.metaBadge}>
+          <Text style={card.metaText}>⏱ {commande.tempsEstime}</Text>
         </View>
-        <Text style={cardStyles.description} numberOfLines={1}>
-          {commande.description}
-        </Text>
+        <Text style={card.description} numberOfLines={1}>{commande.description}</Text>
       </View>
 
-      {/* Bouton Accepter */}
-      {accepted ? (
-        <View style={cardStyles.acceptedBox}>
-          <Text style={cardStyles.acceptedText}>✅ Commande acceptée ! En route vers le pickup...</Text>
+      {/* Postuler / Applied */}
+      {applied ? (
+        <View style={card.appliedBox}>
+          <Text style={card.appliedText}>✅ Candidature envoyée — En attente de sélection...</Text>
         </View>
       ) : (
-        <TouchableOpacity
-          style={cardStyles.acceptBtn}
-          onPress={onAccept}
-          activeOpacity={0.85}
-        >
-          <Text style={cardStyles.acceptBtnText}>Accepter cette commande →</Text>
+        <TouchableOpacity style={card.acceptBtn} onPress={onApply} activeOpacity={0.85}>
+          <Text style={card.acceptBtnText}>Postuler →</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 }
 
-// ─────────────────────────────────────────
-// STYLES
-// ─────────────────────────────────────────
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.bgDark },
-  container: { flex: 1, backgroundColor: Colors.bgDark },
-  scrollContent: { paddingBottom: 32 },
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  root:          { flex: 1, backgroundColor: WHITE },
+  scroll:        { flex: 1, backgroundColor: LIGHT_BG },
+  scrollContent: { paddingBottom: 20 },
 
-  topBar: {
+  // Header
+  header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: WHITE,
+    gap: 10,
   },
-  greeting: { fontSize: FontSize.sm, color: Colors.textSecondary },
-  livreurName: { fontSize: FontSize.xl, fontWeight: '800', color: Colors.textPrimary },
-  topBarRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  notifBtn: { padding: Spacing.xs },
-  notifIcon: { fontSize: 22 },
-  avatarBtn: {
+  hamburgerBtn: {
     width: 40,
     height: 40,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.successGhost,
-    borderWidth: 1.5,
-    borderColor: Colors.success,
+    borderRadius: 12,
+    backgroundColor: LIGHT_BG,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText: { color: Colors.success, fontWeight: '700', fontSize: FontSize.sm },
+  hamburgerIcon: { fontSize: 20, color: DARK_TEXT, lineHeight: 24 },
+  headerCenter:  { flex: 1 },
+  greeting:      { fontSize: 12, color: GRAY_LABEL, fontWeight: '500', marginBottom: 2 },
+  driverName:    { fontSize: 18, fontWeight: '800', color: DARK_TEXT },
+  headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  notifBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: LIGHT_BG,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notifIcon: { fontSize: 18 },
+  avatarBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(34,197,94,0.12)',
+    borderWidth: 1.5,
+    borderColor: SUCCESS,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: { color: SUCCESS, fontWeight: '800', fontSize: 13 },
 
-  // Toggle
-  statusToggle: {
+  // Status Card
+  statusCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.bgCard,
-    marginHorizontal: Spacing.lg,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
+    backgroundColor: WHITE,
+    marginHorizontal: 16,
+    marginBottom: 14,
+    borderRadius: 18,
+    padding: 16,
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: GRAY_DIV,
+    ...CARD_SHADOW,
   },
-  statusToggleOnline: {
-    borderColor: Colors.success,
-    backgroundColor: 'rgba(34, 197, 94, 0.05)',
-  },
-  statusLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  statusDot: { width: 10, height: 10, borderRadius: 5 },
-  statusTitle: { fontSize: FontSize.md, fontWeight: '700', color: Colors.textPrimary },
-  statusSubtitle: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 1 },
+  statusCardOnline:  { borderColor: SUCCESS_BORDER, backgroundColor: SUCCESS_BG },
+  statusLeft:        { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  statusDot:         { width: 10, height: 10, borderRadius: 5 },
+  statusTitle:       { fontSize: 15, fontWeight: '700', color: DARK_TEXT },
+  statusSubtitle:    { fontSize: 11, color: GRAY_LABEL, marginTop: 2 },
 
   // Stats
   statsRow: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: 16,
     gap: 10,
-    marginBottom: Spacing.md,
+    marginBottom: 14,
   },
 
-  // Earnings card
+  // Earnings
   earningsCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.bgCard,
-    marginHorizontal: Spacing.lg,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: WHITE,
+    marginHorizontal: 16,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 20,
     borderLeftWidth: 3,
-    borderLeftColor: Colors.success,
+    borderLeftColor: SUCCESS,
+    ...CARD_SHADOW,
   },
-  earningsLabel: { fontSize: FontSize.xs, color: Colors.textSecondary, marginBottom: 2 },
-  earningsValue: { fontSize: FontSize.xl, fontWeight: '800', color: Colors.success },
-  earningsRight: { alignItems: 'flex-end' },
-  totalLabel: { fontSize: FontSize.xs, color: Colors.textSecondary, marginBottom: 2 },
-  totalValue: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textPrimary },
+  earningsLabel:   { fontSize: 11, color: GRAY_LABEL, fontWeight: '500', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 },
+  earningsValue:   { fontSize: 22, fontWeight: '800', color: SUCCESS },
+  earningsDivider: { width: 1, height: 40, backgroundColor: GRAY_DIV, marginHorizontal: 20 },
+  earningsRight:   { flex: 1 },
+  totalValue:      { fontSize: 18, fontWeight: '800', color: DARK_TEXT },
 
-  // Section
+  // Section header
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
-  sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textPrimary },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: DARK_TEXT },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.errorGhost,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
+    backgroundColor: ERROR_BG,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
     gap: 5,
   },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.error },
-  liveText: { fontSize: FontSize.xs, color: Colors.error, fontWeight: '800', letterSpacing: 1 },
+  liveDot:  { width: 6, height: 6, borderRadius: 3, backgroundColor: ERROR },
+  liveText: { fontSize: 10, color: ERROR, fontWeight: '800', letterSpacing: 1 },
 
-  commandesList: { paddingHorizontal: Spacing.lg, gap: 12 },
+  ordersList: { paddingHorizontal: 16, gap: 12 },
 
-  // Offline
-  offlineBox: {
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xl,
-  },
-  offlineEmoji: { fontSize: 56, marginBottom: Spacing.md },
-  offlineTitle: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.sm },
-  offlineSubtitle: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
+  offlineBox:   { alignItems: 'center', paddingHorizontal: 32, paddingTop: 32 },
+  offlineEmoji: { fontSize: 56, marginBottom: 16 },
+  offlineTitle: { fontSize: 20, fontWeight: '700', color: DARK_TEXT, marginBottom: 8 },
+  offlineSub:   { fontSize: 13, color: GRAY_LABEL, textAlign: 'center', lineHeight: 22 },
 });
 
-const miniStatStyles = StyleSheet.create({
-  card: {
-    flex: 1,
-    backgroundColor: Colors.bgCard,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-  },
-  icon: { fontSize: 20, marginBottom: 4 },
-  value: { fontSize: FontSize.md, fontWeight: '800', marginBottom: 2 },
-  label: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: 'center' },
+const stat = StyleSheet.create({
+  card:  { flex: 1, backgroundColor: WHITE, borderRadius: 16, padding: 14, alignItems: 'center', ...CARD_SHADOW },
+  icon:  { fontSize: 20, marginBottom: 6 },
+  value: { fontSize: 15, fontWeight: '800', marginBottom: 2 },
+  label: { fontSize: 10, color: GRAY_LABEL, textAlign: 'center', fontWeight: '500' },
 });
 
-const cardStyles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.bgCard,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  header: {
+const card = StyleSheet.create({
+  wrap: { backgroundColor: WHITE, borderRadius: 20, padding: 16, ...CARD_SHADOW },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  agenceRow:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  vehicleIconWrap:{ width: 42, height: 42, borderRadius: 12, backgroundColor: LIGHT_BG, justifyContent: 'center', alignItems: 'center' },
+  vehicleIcon:    { fontSize: 22 },
+  agenceName:     { fontSize: 15, fontWeight: '700', color: DARK_TEXT },
+  orderId:        { fontSize: 11, color: GRAY_LABEL, marginTop: 2 },
+  pricePill: {
+    backgroundColor: LIGHT_BG,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
+    alignItems: 'baseline',
   },
-  agenceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  vehicleIcon: { fontSize: 24 },
-  agenceName: { fontSize: FontSize.md, fontWeight: '700', color: Colors.textPrimary },
-  commandeId: { fontSize: FontSize.xs, color: Colors.textMuted },
-  prixBox: { alignItems: 'flex-end' },
-  prix: { fontSize: FontSize.xxl, fontWeight: '800', color: Colors.primary, lineHeight: 28 },
-  prixUnit: { fontSize: FontSize.xs, color: Colors.textSecondary },
-
-  addressSection: { marginBottom: Spacing.md },
-  addressRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  addressLine: {
-    width: 1.5,
-    height: 12,
-    backgroundColor: Colors.border,
-    marginLeft: 3.5,
-    marginVertical: 2,
-  },
-  addressText: { flex: 1, fontSize: FontSize.sm, color: Colors.textPrimary, fontWeight: '500' },
-
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: Spacing.md,
-    flexWrap: 'wrap',
-  },
-  infoBadge: {
-    backgroundColor: Colors.bgElevated,
-    borderRadius: Radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  infoText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: '600' },
-  description: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted },
-
+  price:     { fontSize: 18, fontWeight: '800', color: CORAL },
+  priceUnit: { fontSize: 11, color: GRAY_LABEL, fontWeight: '600' },
+  divider:        { height: 1, backgroundColor: GRAY_DIV, marginBottom: 12 },
+  addressSection: { marginBottom: 12 },
+  addressRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dot:            { width: 8, height: 8, borderRadius: 4 },
+  addressLine:    { width: 1.5, height: 10, backgroundColor: GRAY_DIV, marginLeft: 3.5, marginVertical: 3 },
+  addressText:    { flex: 1, fontSize: 13, color: DARK_TEXT, fontWeight: '500' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
+  metaBadge:   { backgroundColor: LIGHT_BG, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  metaText:    { fontSize: 11, color: GRAY_LABEL, fontWeight: '600' },
+  description: { flex: 1, fontSize: 11, color: GRAY_LABEL },
   acceptBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.md,
-    height: 48,
+    backgroundColor: DARK_CARD,
+    borderRadius: 999,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.primary,
+    shadowColor: DARK_CARD,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.18,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 4,
   },
-  acceptBtnText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
-  acceptedBox: {
-    backgroundColor: Colors.successGhost,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
+  acceptBtnText: { color: WHITE, fontSize: 15, fontWeight: '700' },
+  appliedBox: {
+    backgroundColor: 'rgba(245,158,11,0.10)',
+    borderRadius: 12,
+    padding: 14,
     borderWidth: 1,
-    borderColor: Colors.success,
+    borderColor: 'rgba(245,158,11,0.30)',
     alignItems: 'center',
   },
-  acceptedText: { color: Colors.success, fontSize: FontSize.sm, fontWeight: '600' },
+  appliedText: { color: WARNING, fontSize: 13, fontWeight: '600' },
 });
