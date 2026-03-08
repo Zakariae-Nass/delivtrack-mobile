@@ -11,23 +11,38 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
-import { Colors, Spacing, Radius, FontSize } from '../../config/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+const CORAL     = '#FF6B5B';
+const DARK_CARD = '#1C1C1E';
+const WHITE     = '#FFFFFF';
+const LIGHT_BG  = '#F5F5F7';
+const DARK_TEXT = '#1C1C1E';
+const GRAY_LABEL= '#8E8EA0';
+const GRAY_DIV  = '#ECECF0';
+
+const CARD_SHADOW = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.07,
+  shadowRadius: 14,
+  elevation: 5,
+};
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email,        setEmail]        = useState('');
+  const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [focusedInput, setFocusedInput] = useState(null);
+  const [loading,      setLoading]      = useState(false);
+  const [focused,      setFocused]      = useState(null);
 
-  // Mock login — sera remplacé par useAuth + backend
   const handleLogin = () => {
     if (!email || !password) return;
     setLoading(true);
-
     setTimeout(() => {
       setLoading(false);
-      // Simule rôle selon email entré
       if (email.includes('livreur')) {
         navigation.replace('LivreurHome');
       } else {
@@ -38,244 +53,249 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={s.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bgDark} />
+      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoIcon}>🚚</Text>
+        <SafeAreaView edges={['top']} />
+
+        {/* ── Logo / Brand ── */}
+        <View style={s.brand}>
+          <View style={s.logoWrap}>
+            <Text style={s.logoEmoji}>🚚</Text>
           </View>
-          <Text style={styles.appName}>DelivTrack</Text>
-          <Text style={styles.tagline}>La livraison intelligente au Maroc</Text>
+          <Text style={s.appName}>DelivTrack</Text>
+          <Text style={s.tagline}>La livraison intelligente au Maroc</Text>
         </View>
 
-        {/* Card formulaire */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Connexion</Text>
-          <Text style={styles.cardSubtitle}>Bienvenue ! Connectez-vous à votre compte</Text>
+        {/* ── Form Card ── */}
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Connexion</Text>
+          <Text style={s.cardSubtitle}>Bienvenue ! Connectez-vous à votre compte</Text>
 
           {/* Email */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Email</Text>
-            <View style={[
-              styles.inputWrapper,
-              focusedInput === 'email' && styles.inputWrapperFocused
-            ]}>
-              <Text style={styles.inputIcon}>✉️</Text>
+          <View style={s.fieldGroup}>
+            <Text style={s.fieldLabel}>Email</Text>
+            <View style={[s.inputWrap, focused === 'email' && s.inputWrapFocused]}>
+              <Text style={s.inputIcon}>✉️</Text>
               <TextInput
-                style={styles.input}
+                style={s.input}
                 placeholder="votre@email.com"
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={GRAY_LABEL}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                onFocus={() => setFocusedInput('email')}
-                onBlur={() => setFocusedInput(null)}
+                onFocus={() => setFocused('email')}
+                onBlur={() => setFocused(null)}
               />
             </View>
           </View>
 
           {/* Password */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Mot de passe</Text>
-            <View style={[
-              styles.inputWrapper,
-              focusedInput === 'password' && styles.inputWrapperFocused
-            ]}>
-              <Text style={styles.inputIcon}>🔒</Text>
+          <View style={s.fieldGroup}>
+            <Text style={s.fieldLabel}>Mot de passe</Text>
+            <View style={[s.inputWrap, focused === 'password' && s.inputWrapFocused]}>
+              <Text style={s.inputIcon}>🔒</Text>
               <TextInput
-                style={styles.input}
+                style={s.input}
                 placeholder="••••••••"
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={GRAY_LABEL}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                onFocus={() => setFocusedInput('password')}
-                onBlur={() => setFocusedInput(null)}
+                onFocus={() => setFocused('password')}
+                onBlur={() => setFocused(null)}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Text style={styles.inputIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+              <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={s.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Bouton Se connecter */}
+          {/* Forgot password */}
+          <TouchableOpacity style={s.forgotRow} activeOpacity={0.7}>
+            <Text style={s.forgotText}>Mot de passe oublié ?</Text>
+          </TouchableOpacity>
+
+          {/* Submit */}
           <TouchableOpacity
-            style={[styles.btnPrimary, (!email || !password) && styles.btnDisabled]}
+            style={[s.submitBtn, (!email || !password) && s.submitBtnDisabled]}
             onPress={handleLogin}
             disabled={loading || !email || !password}
             activeOpacity={0.85}
           >
             {loading
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={styles.btnPrimaryText}>Se connecter</Text>
+              ? <ActivityIndicator color={WHITE} size="small" />
+              : <Text style={s.submitText}>Se connecter</Text>
             }
           </TouchableOpacity>
 
-          {/* Hint pour le test */}
-          <View style={styles.hintBox}>
-            <Text style={styles.hintText}>
-              💡 Astuce test : tapez "livreur" dans l'email pour accéder à l'espace livreur
+          {/* Hint */}
+          <View style={s.hintBox}>
+            <Text style={s.hintText}>
+              💡 Tapez "livreur" dans l'email pour accéder à l'espace livreur
             </Text>
           </View>
         </View>
 
-        {/* Footer inscription */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Pas encore de compte ?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.footerLink}> S'inscrire gratuitement</Text>
+        {/* ── Footer ── */}
+        <View style={s.footer}>
+          <Text style={s.footerText}>Pas encore de compte ?</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')} activeOpacity={0.7}>
+            <Text style={s.footerLink}> S'inscrire</Text>
           </TouchableOpacity>
         </View>
+
+        <SafeAreaView edges={['bottom']} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bgDark,
-  },
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  root:  { flex: 1, backgroundColor: LIGHT_BG },
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 60,
-    paddingBottom: Spacing.xl,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
   },
 
-  // Header
-  header: {
+  // Brand
+  brand: {
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    paddingTop: 48,
+    paddingBottom: 32,
   },
-  logoContainer: {
+  logoWrap: {
     width: 80,
     height: 80,
-    borderRadius: Radius.xl,
-    backgroundColor: Colors.primaryGhost,
-    borderWidth: 1.5,
-    borderColor: Colors.borderActive,
+    borderRadius: 22,
+    backgroundColor: WHITE,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,107,91,0.20)',
+    ...CARD_SHADOW,
   },
-  logoIcon: {
-    fontSize: 36,
-  },
+  logoEmoji: { fontSize: 36 },
   appName: {
-    fontSize: FontSize.xxl,
+    fontSize: 28,
     fontWeight: '800',
-    color: Colors.textPrimary,
-    letterSpacing: 1,
+    color: DARK_TEXT,
+    letterSpacing: 0.5,
+    marginBottom: 6,
   },
   tagline: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xs,
+    fontSize: 13,
+    color: GRAY_LABEL,
+    fontWeight: '500',
   },
 
   // Card
   card: {
-    backgroundColor: Colors.bgCard,
-    borderRadius: Radius.xl,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: Spacing.lg,
+    backgroundColor: WHITE,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+    ...CARD_SHADOW,
   },
   cardTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
+    fontSize: 22,
+    fontWeight: '800',
+    color: DARK_TEXT,
+    marginBottom: 6,
   },
   cardSubtitle: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.lg,
+    fontSize: 13,
+    color: GRAY_LABEL,
+    marginBottom: 24,
+    lineHeight: 20,
   },
 
-  // Input
-  inputGroup: {
-    marginBottom: Spacing.md,
-  },
-  inputLabel: {
-    fontSize: FontSize.sm,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
+  // Fields
+  fieldGroup: { marginBottom: 16 },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: GRAY_LABEL,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.7,
+    marginBottom: 8,
   },
-  inputWrapper: {
+  inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.bgInput,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.md,
+    backgroundColor: LIGHT_BG,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: GRAY_DIV,
+    paddingHorizontal: 14,
     height: 52,
+    gap: 8,
   },
-  inputWrapperFocused: {
-    borderColor: Colors.primary,
-    backgroundColor: 'rgba(255, 107, 53, 0.05)',
+  inputWrapFocused: {
+    borderColor: CORAL,
+    backgroundColor: 'rgba(255,107,91,0.04)',
+    shadowColor: CORAL,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  inputIcon: {
-    fontSize: 16,
-    marginRight: Spacing.sm,
-  },
+  inputIcon: { fontSize: 16 },
   input: {
     flex: 1,
-    color: Colors.textPrimary,
-    fontSize: FontSize.md,
+    fontSize: 15,
+    color: DARK_TEXT,
   },
+  eyeIcon: { fontSize: 16 },
 
-  // Bouton
-  btnPrimary: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.md,
-    height: 54,
+  // Forgot
+  forgotRow: { alignSelf: 'flex-end', marginBottom: 20, marginTop: -4 },
+  forgotText: { fontSize: 13, color: CORAL, fontWeight: '600' },
+
+  // Submit
+  submitBtn: {
+    backgroundColor: DARK_CARD,
+    borderRadius: 999,
+    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: Spacing.sm,
-    shadowColor: Colors.primary,
+    shadowColor: DARK_CARD,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.20,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 6,
+    marginBottom: 16,
   },
-  btnDisabled: {
-    opacity: 0.45,
-  },
-  btnPrimaryText: {
-    color: '#fff',
-    fontSize: FontSize.lg,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  submitBtnDisabled: { opacity: 0.45 },
+  submitText: {
+    color: WHITE,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
 
   // Hint
   hintBox: {
-    marginTop: Spacing.md,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
+    backgroundColor: LIGHT_BG,
+    borderRadius: 12,
+    padding: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: GRAY_DIV,
   },
   hintText: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
+    fontSize: 12,
+    color: GRAY_LABEL,
     lineHeight: 18,
   },
 
@@ -285,13 +305,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  footerText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-  },
-  footerLink: {
-    fontSize: FontSize.sm,
-    color: Colors.primary,
-    fontWeight: '700',
-  },
+  footerText: { fontSize: 14, color: GRAY_LABEL },
+  footerLink: { fontSize: 14, color: CORAL, fontWeight: '800' },
 });
